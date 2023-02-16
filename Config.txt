@@ -1,0 +1,2 @@
+edge_webdriver_path = C:\Program Files (x86)\Microsoft\Edge\Webdriver
+download_auto_confirm = false
