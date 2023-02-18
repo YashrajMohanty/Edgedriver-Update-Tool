@@ -1,4 +1,4 @@
-edge_webdriver_path = 
+edge_webdriver_path =
 chrome_webdriver_path =
 firefox_webdriver_path =
 download_auto_confirm = false
