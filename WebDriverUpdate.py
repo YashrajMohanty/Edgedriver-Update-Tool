@@ -14,9 +14,14 @@ def read_config():
 
     config = open("Config.txt", "r")
     edge_path = config.readline().split('=')[1].strip()
+    chrome_path = config.readline().split('=')[1].strip()
+    firefox_path = config.readline().split('=')[1].strip()
     if (not os.path.exists(edge_path)):
-        print("Invalid path. Set path in config.txt")
-        quit()
+        print("Invalid Edge webdriver path. Set path in config.txt")
+    if (not os.path.exists(chrome_path)):
+        print("Invalid Chrome webdriver path. Set path in config.txt")
+    if (not os.path.exists(firefox_path)):
+        print("Invalid Firefox webdriver path. Set path in config.txt")
     download_auto_confirm = config.readline().split('=')[1].strip().lower()
     download_auto_confirm = download_auto_confirm == 'true'
     print(edge_path, download_auto_confirm)
@@ -62,7 +67,7 @@ def find_latest_version():
     #print(r) # response
     parsed_html = bs(r.text, features='html.parser') #parse html code
     latest_version = parsed_html.body.find('p', attrs={'class':'driver-download__meta'}).text #retrieve text
-    latest_version = latest_version[9:-23] #slicing string to get version number
+    latest_version = latest_version[9:-23].split(':')[0] #slicing string to get version number
     print("Latest Stable Release:", latest_version) #print version number
     return latest_version
 
