@@ -9,6 +9,9 @@ from selenium.webdriver.edge.service import Service as edgeservice
 from selenium.webdriver.edge.options import Options as edgeoptions
 from selenium.webdriver.chrome.service import Service as chromeservice
 from selenium.webdriver.chrome.options import Options as chromeoptions
+from selenium.webdriver.firefox.service import Service as firefoxservice
+from selenium.webdriver.firefox.options import Options as firefoxoptions
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from zipp import zipfile
 import os
 
@@ -122,6 +125,23 @@ class chrome():
 
 class firefox():
 
+    def find_current_version(firefox_path):
+        '''Provides version of the currently installed Google Chrome webdriver.'''
+        opts = firefoxoptions()
+        opts.binary_location = 'C:/Program Files/Mozilla Firefox/firefox.exe'
+        opts.add_argument('--headless')
+        #opts.add_experimental_option('excludeSwitches', ['enable-logging']) #disable devtools listening
+
+        try:
+            driver = webdriver.Firefox(options=opts, service=firefoxservice(firefox_path + "\geckodriver.exe"), log_path=None) #apply options and start session (headless)
+            current_version = driver.capabilities['firefox']['moz:geckodriverVersion'].split(' ')[0]
+        except Exception as e:
+            print(e)
+            print("Error")
+            quit()
+        print('Firefox webdriver current version:', current_version)
+        return current_version
+
     def find_latest_version():
         '''Provides the latest firefox webdriver(geckodriver) version'''
 
@@ -173,7 +193,7 @@ if edge_path != None:
 if chrome_path != None:
     print('[2] Google Chrome')
 if firefox_path != None:
-    print('[3] Mozilla Firefox (Current version check and download auto-confirm unavailable)')
+    print('[3] Mozilla Firefox (Current version check unavailable)')
 print('[Q] Quit')
 
 browser_select = input().lower()
@@ -187,6 +207,7 @@ if browser_select == '2':
     current_version = chrome.find_current_version(chrome_path)
     latest_version = chrome.find_latest_version()
 if browser_select == '3': #current version check unavailable
+    #current_version = firefox.find_current_version(firefox_path)
     latest_version = firefox.find_latest_version()
 if browser_select == 'q':
     quit()
