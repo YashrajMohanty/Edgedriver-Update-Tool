@@ -1,22 +1,15 @@
 '''Can be used for quickly updating MS Edge, Google Chrome and Mozilla Firefox webdrivers.
-   NOTE: For MS Edge, cannot be used if a version of webdriver isn't already installed (due to permission issues).
-   NOTE: Chrome and Firefox aren't completely tested'''
+   NOTE: For MS Edge, cannot be used if a version of webdriver isn't already installed
+   (due to permission issues).'''
 
 import requests
 from bs4 import BeautifulSoup as bs
-from selenium import webdriver
-from selenium.webdriver.edge.service import Service as edgeservice
-from selenium.webdriver.edge.options import Options as edgeoptions
-from selenium.webdriver.chrome.service import Service as chromeservice
-from selenium.webdriver.chrome.options import Options as chromeoptions
-from selenium.webdriver.firefox.service import Service as firefoxservice
-from selenium.webdriver.firefox.options import Options as firefoxoptions
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from zipp import zipfile
 import os
+import subprocess
 
 def read_config():
-    '''Read config.txt'''
+    '''Reads config.txt'''
 
     config = open("Config.txt", "r")
     edge_path = config.readline().split('=')[1].strip()
@@ -32,20 +25,12 @@ def read_config():
         firefox_path = None
         print("Invalid Firefox webdriver path. Set path in config.txt")
 
-    download_auto_confirm = config.readline().split('=')[1].strip().lower()
-    download_auto_confirm = download_auto_confirm == 'true'
-    print(edge_path, download_auto_confirm)
-    return (edge_path, chrome_path, firefox_path, download_auto_confirm)
+    print('Edge path: ' + edge_path + '\nChrome path: ' + chrome_path + '\nFirefox path: ' + firefox_path + '\n')
+    return (edge_path, chrome_path, firefox_path)
 
 def check_version(current_version, latest_version):
     '''Compares current webdriver version with the latest version.
     If outdated, provides URL for the latest version.'''
-
-    if browser_select == '3': #cannot compare for firefox due to unavailable current version check
-        print('Current version check unavailable\nDownload latest geckodriver release below')
-        lv_link = 'https://github.com/mozilla/geckodriver/releases/download/v' + latest_version + '/geckodriver-v' + latest_version + '-win32.zip'
-        print(lv_link)
-        return lv_link
 
     cv = current_version.split('.')
     lv = latest_version.split('.')
@@ -59,6 +44,8 @@ def check_version(current_version, latest_version):
                 lv_link = 'https://msedgedriver.azureedge.net/' + latest_version + '/edgedriver_win64.zip'
             if browser_select == '2':
                 lv_link = 'https://chromedriver.storage.googleapis.com/' + latest_version + '/chromedriver_win32.zip'
+            if browser_select == '3':
+                lv_link = 'https://github.com/mozilla/geckodriver/releases/download/v' + latest_version + '/geckodriver-v' + latest_version + '-win32.zip'
             print(lv_link)
             return lv_link
     print("The latest version of webdriver is already installed")
@@ -68,16 +55,12 @@ class msedge():
 
     def find_current_version(edge_path):
         '''Provides version of the currently installed MS Edge webdriver.'''
-
-        opts = edgeoptions()
-        opts.add_argument('--headless')
-        opts.add_experimental_option('excludeSwitches', ['enable-logging']) #disable devtools listening
+        version_cmd = edge_path + '\msedgedriver -v'
         try:
-            driver = webdriver.Edge(options=opts, service=edgeservice(edge_path + "\msedgedriver.exe")) #apply options and start session (headless)
-            current_version = driver.capabilities['msedge']['msedgedriverVersion'].split(' ')[0]
+            current_version = str(subprocess.check_output(version_cmd))
+            current_version = current_version.split(' ')[3]
         except Exception as e:
-            print(e)
-            print("Edge webdriver not installed")
+            print("ERROR:", e)
             quit()
         print('Edge webdriver current version:', current_version)
         return current_version
@@ -97,17 +80,12 @@ class chrome():
 
     def find_current_version(chrome_path):
         '''Provides version of the currently installed Google Chrome webdriver.'''
-
-        opts = chromeoptions()
-        opts.add_argument('--headless')
-        opts.add_experimental_option('excludeSwitches', ['enable-logging']) #disable devtools listening
-
+        version_cmd = chrome_path + '\chromedriver -v'
         try:
-            driver = webdriver.Chrome(options=opts, service=chromeservice(chrome_path + "\chromedriver.exe")) #apply options and start session (headless)
-            current_version = driver.capabilities['chrome']['chromedriverVersion'].split(' ')[0]
+            current_version = str(subprocess.check_output(version_cmd))
+            current_version = current_version.split(' ')[1]
         except Exception as e:
-            print(e)
-            print("Error")
+            print("ERROR:", e)
             quit()
         print('Chrome webdriver current version:', current_version)
         return current_version
@@ -126,18 +104,13 @@ class chrome():
 class firefox():
 
     def find_current_version(firefox_path):
-        '''Provides version of the currently installed Google Chrome webdriver.'''
-        opts = firefoxoptions()
-        opts.binary_location = 'C:/Program Files/Mozilla Firefox/firefox.exe'
-        opts.add_argument('--headless')
-        #opts.add_experimental_option('excludeSwitches', ['enable-logging']) #disable devtools listening
-
+        '''Provides version of the currently installed Firefox geckodriver.'''
+        version_cmd = firefox_path + '\geckodriver --version'
         try:
-            driver = webdriver.Firefox(options=opts, service=firefoxservice(firefox_path + "\geckodriver.exe"), log_path=None) #apply options and start session (headless)
-            current_version = driver.capabilities['firefox']['moz:geckodriverVersion'].split(' ')[0]
+            current_version = str(subprocess.check_output(version_cmd))
+            current_version = current_version.split(' ')[1]
         except Exception as e:
-            print(e)
-            print("Error")
+            print("ERROR:", e)
             quit()
         print('Firefox webdriver current version:', current_version)
         return current_version
@@ -185,7 +158,7 @@ def delete_file(filename):
     return
 
 
-edge_path, chrome_path, firefox_path, download_auto_confirm = read_config()
+edge_path, chrome_path, firefox_path = read_config()
 
 print('Select browser:-')
 if edge_path != None:
@@ -193,7 +166,7 @@ if edge_path != None:
 if chrome_path != None:
     print('[2] Google Chrome')
 if firefox_path != None:
-    print('[3] Mozilla Firefox (Current version check unavailable)')
+    print('[3] Mozilla Firefox')
 print('[Q] Quit')
 
 browser_select = input().lower()
@@ -207,38 +180,17 @@ if browser_select == '2':
     current_version = chrome.find_current_version(chrome_path)
     latest_version = chrome.find_latest_version()
 if browser_select == '3': #current version check unavailable
-    #current_version = firefox.find_current_version(firefox_path)
+    current_version = firefox.find_current_version(firefox_path)
     latest_version = firefox.find_latest_version()
 if browser_select == 'q':
+    print('Exiting')
     quit()
 
 
 link = check_version(current_version, latest_version)
 
-if (link != None):
-    if current_version == None:
-        if browser_select == '3': #current version check unavailable for firefox
-            download_permission = input("Download [Y/N]?\n")
-            download_permission = download_permission.lower()
-            if download_permission == 'y':
-                download_file(link, firefox_path)
-                delete_file("Webdriver.zip")
-                quit()
-            elif download_permission == 'n':
-                quit()
-            else:
-                print('Invalid response')
-                quit()
-    else:
-        quit()
+if (link != None) and (current_version != None):
 
-    if download_auto_confirm:
-        if browser_select == '1':
-            download_file(link, edge_path)
-        if browser_select == '2':
-            download_file(link, chrome_path)
-        delete_file("Webdriver.zip")
-    else:
         download_permission = input("Download [Y/N]?\n")
         download_permission = download_permission.lower()
         if download_permission == 'y':
@@ -246,10 +198,10 @@ if (link != None):
                 download_file(link, edge_path)
             if browser_select == '2':
                 download_file(link, chrome_path)
-
+            if browser_select == '3':
+                download_file(link, firefox_path)
             delete_file("Webdriver.zip")
 
-        elif download_permission == 'n':
-            quit()
         else:
-            print('Invalid response')
+            print('Error encountered. Exiting')
+            quit()
